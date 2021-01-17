@@ -77,6 +77,7 @@ class Bunnycdnhtmlcaching {
 		$this->load_dependencies();
 		$this->set_locale();
 		$this->define_admin_hooks();
+		$this->plugin_settings();
 
 	}
 
@@ -190,6 +191,292 @@ class Bunnycdnhtmlcaching {
 	 */
 	public function get_version() {
 		return $this->version;
+	}
+
+	/**
+	 * The code used to add core functionality of plugin.
+	 */
+	public function plugin_settings() {
+
+
+		/**
+		* The code used to add setting submenu in wordpress setting menu.
+		*/
+		add_action("admin_menu", "bunnycdnhtmlcaching_setting_submenu");
+		function bunnycdnhtmlcaching_setting_submenu() {
+		  add_submenu_page(
+		        'options-general.php',
+		        'BunnyCDN HTML Caching',
+		        'BunnyCDN',
+		        'administrator',
+		        'bunnycdnhtmlcaching',
+		        'bunnycdnhtmlcaching_setting_submenu_markup'
+		    );
+		}
+
+		/**
+		* The code used to add setting submenu markup.
+		*/
+		function bunnycdnhtmlcaching_setting_submenu_markup() {
+			if ( !current_user_can("manage_options") ) {
+				return;
+			}
+
+			include (plugin_dir_path( __DIR__ ) . "admin/partials/bunnycdnhtmlcaching-admin-display.php");
+		}
+
+		/**
+		* The code used to add setting submenu section/fields.
+		*/
+		function bunnycdnhtmlcaching_setting_section() {
+			add_settings_section(
+				"bunnycdnhtmlcaching_settings_section",
+				"Setup BunnyCDN",
+				"bunnycdnhtmlcaching_settings_section_callback",
+				"bunnycdnhtmlcaching"
+			);
+
+			add_settings_field(
+				'bunnycdnhtmlcaching_settings_bunnycdn_api_key',
+				__( 'API Key', 'bunnycdnhtmlcaching'),
+				'bunnycdnhtmlcaching_settings_bunnycdn_api_key_callback',
+				'bunnycdnhtmlcaching',
+				'bunnycdnhtmlcaching_settings_section'
+			);
+
+			add_settings_field(
+				'bunnycdnhtmlcaching_settings_bunnycdn_webp_image_delivery',
+				__( 'WebP Image Delivery', 'bunnycdnhtmlcaching'),
+				'bunnycdnhtmlcaching_settings_bunnycdn_webp_image_delivery_callback',
+				'bunnycdnhtmlcaching',
+				'bunnycdnhtmlcaching_settings_section',
+				[
+					'option_one' => 'Off (Default)',
+					'option_two' => 'Vary Cache',
+					'option_three' => 'Optimizer ($9.5/mo)'
+				]
+			);
+
+			add_settings_field(
+				'bunnycdnhtmlcaching_settings_site_version',
+				__( 'Site Version', 'bunnycdnhtmlcaching'),
+				'bunnycdnhtmlcaching_settings_site_version_callback',
+				'bunnycdnhtmlcaching',
+				'bunnycdnhtmlcaching_settings_section',
+			    [
+			        'class' => 'hidden'
+			    ]				
+			);
+
+			add_settings_field(
+				'bunnycdnhtmlcaching_settings_bunnycdn_ssl_certificate',
+				__( 'BunnyCDN SSL Certificate', 'bunnycdnhtmlcaching'),
+				'bunnycdnhtmlcaching_settings_bunnycdn_ssl_certificate_callback',
+				'bunnycdnhtmlcaching',
+				'bunnycdnhtmlcaching_settings_section',
+			    [
+			        'class' => 'hidden'
+			    ]				
+			);
+
+			add_settings_field(
+				'bunnycdnhtmlcaching_settings_bunnycdn_pullzone_id',
+				__( 'BunnyCDN Pullzone ID', 'bunnycdnhtmlcaching'),
+				'bunnycdnhtmlcaching_settings_bunnycdn_pullzone_id_callback',
+				'bunnycdnhtmlcaching',
+				'bunnycdnhtmlcaching_settings_section',
+			    [
+			        'class' => 'hidden'
+			    ]				
+			);
+
+			register_setting(
+				'bunnycdnhtmlcaching_settings',
+				'bunnycdnhtmlcaching_settings'
+			); 
+
+			function bunnycdnhtmlcaching_settings_bunnycdn_api_key_callback() {
+
+				$options = get_option( 'bunnycdnhtmlcaching_settings' );
+				if (is_serialized($options)) {
+					$options = unserialize($options);
+				}
+
+				$bunnycdn_api_key = '';
+
+				if( isset( $options[ 'bunnycdn_api_key' ] ) ) {
+					$bunnycdn_api_key = esc_html( $options['bunnycdn_api_key'] );
+				}
+
+				echo '
+					<input autocomplete="new-password" type="password" id="bunnycdnhtmlcaching_bunnycdn_api_key" name="bunnycdnhtmlcaching_settings[bunnycdn_api_key]" value="' . $bunnycdn_api_key . '" />
+					<button type="button" name="show_bunnycdn_api_key" id="show_bunnycdn_api_key" class="button button-primary">Show</button>
+				';
+
+			}
+
+			function bunnycdnhtmlcaching_settings_bunnycdn_webp_image_delivery_callback($args) {
+
+				$options = get_option( 'bunnycdnhtmlcaching_settings' );
+				if (is_serialized($options)) {
+					$options = unserialize($options);
+				}
+
+				$bunnycdn_webp_image_delivery = '';
+
+				if ( isset( $options[ 'bunnycdn_webp_image_delivery' ] ) ) {
+					$bunnycdn_webp_image_delivery = esc_html( $options['bunnycdn_webp_image_delivery'] );
+				}
+
+				$html = '<select id="bunnycdnhtmlcaching_bunnycdn_webp_image_delivery" name="bunnycdnhtmlcaching_settings[bunnycdn_webp_image_delivery]">';
+				$html .= '<option value="1"' . selected( $bunnycdn_webp_image_delivery, '1', false) . '>' . $args['option_one'] . '</option>';
+				$html .= '<option value="2"' . selected( $bunnycdn_webp_image_delivery, '2', false) . '>' . $args['option_two'] . '</option>';
+				$html .= '<option value="3"' . selected( $bunnycdn_webp_image_delivery, '3', false) . '>' . $args['option_three'] . '</option>';
+				$html .= '</select>';
+
+				echo $html;
+
+			}
+
+			function bunnycdnhtmlcaching_settings_site_version_callback() {
+
+				$options = get_option( 'bunnycdnhtmlcaching_settings' );
+				if (is_serialized($options)) {
+					$options = unserialize($options);
+				}
+
+				$site_version = bunnycdnhtmlcaching_get_site_version();
+
+				if( isset( $options[ 'site_version' ] ) ) {
+					$site_version = esc_html( $options['site_version'] );
+				}
+
+				echo '<input type="text" id="bunnycdnhtmlcaching_site_version" name="bunnycdnhtmlcaching_settings[site_version]" value="' . $site_version . '" />';
+
+			}
+
+			function bunnycdnhtmlcaching_settings_bunnycdn_pullzone_id_callback() {
+
+				$options = get_option( 'bunnycdnhtmlcaching_settings' );
+				if (is_serialized($options)) {
+					$options = unserialize($options);
+				}
+
+				$bunnycdn_pullzone_id = bunnycdnhtmlcaching_get_bunnycdn_pullzone_id();
+
+				if( isset( $options[ 'bunnycdn_pullzone_id' ] ) ) {
+					$bunnycdn_pullzone_id = esc_html( $options['bunnycdn_pullzone_id'] );
+				}
+
+				echo '<input type="text" id="bunnycdnhtmlcaching_bunnycdn_pullzone_id" name="bunnycdnhtmlcaching_settings[bunnycdn_pullzone_id]" value="' . $bunnycdn_pullzone_id . '" />';
+			}
+
+			function bunnycdnhtmlcaching_settings_bunnycdn_ssl_certificate_callback() {
+
+				$options = get_option( 'bunnycdnhtmlcaching_settings' );
+				if (is_serialized($options)) {
+					$options = unserialize($options);
+				}
+
+				$bunnycdn_ssl_certificate = bunnycdnhtmlcaching_get_bunnycdn_ssl_certificate();
+
+				if( isset( $options[ 'bunnycdn_ssl_certificate' ] ) ) {
+					$bunnycdn_ssl_certificate = esc_html( $options['bunnycdn_ssl_certificate'] );
+				}
+
+				echo '<input type="text" id="bunnycdnhtmlcaching_bunnycdn_pullzone_id" name="bunnycdnhtmlcaching_settings[bunnycdn_ssl_certificate]" value="' . $bunnycdn_ssl_certificate . '" />';
+			} 
+
+			function bunnycdnhtmlcaching_settings_section_callback() {
+			  echo __('The BunnyCDN API key to manage the zone. Adding this will enable features such as cache purging. You can find the key in your <a href="https://bunnycdn.com/dashboard/account" target="_blank">account settings</a>.', 'bunnycdnhtmlcaching');
+			} 
+		}
+
+		add_action( "admin_init", "bunnycdnhtmlcaching_setting_section" );
+
+		
+		/**
+		* The code used to add clear site and page cache menu in wordpress admin bar.
+		*/
+		$settings = get_option("bunnycdnhtmlcaching_settings");
+		if (is_serialized($settings)) {
+			$settings = unserialize($settings);
+		}
+
+		$account_key = isset($settings['bunnycdn_api_key']) ? $settings['bunnycdn_api_key'] : false;
+		$pullzone_id = isset($settings['bunnycdn_pullzone_id']) ?  $settings['bunnycdn_pullzone_id'] : false;
+
+		if ($account_key && $pullzone_id) {
+			add_action( 'admin_bar_menu', 'bunnycdnhtmlcaching_admin_bar_item', 500 );
+		}
+
+
+		function bunnycdnhtmlcaching_admin_bar_item( WP_Admin_Bar $admin_bar ) {
+			
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+
+			$admin_bar->add_menu( array(
+				'id'    => 'bunnycdn_clear_site_cache',
+				'parent' => 'top-secondary',
+				'title' => 'Clear Site Cache',
+				'href'   => wp_nonce_url( add_query_arg( array(
+					'_cache'  => 'bunnycdnhtmlcaching',
+					'_action' => 'clear_site_cache',
+				) ), 'bunnycdnhtmlcaching_clear_cache_nonce' ),
+				'meta' => ['title' => __( 'Clear Site Cache', 'bunnycdnhtmlcaching' )]
+			) );
+
+			if ( ! is_admin() ) {
+				$admin_bar->add_menu( array(
+					'id'    => 'bunnycdn_clear_page_cache',
+					'parent' => 'top-secondary',
+					'title' => 'Clear Page Cache',
+					'href'   => wp_nonce_url( add_query_arg( array(
+						'_cache'  => 'bunnycdnhtmlcaching',
+						'_action' => 'clear_page_cache',
+					) ), 'bunnycdnhtmlcaching_clear_cache_nonce' ),
+					'meta' => ['title' => __( 'Clear Page Cache', 'bunnycdnhtmlcaching' )]
+				) );
+			}
+			
+		}
+		
+		/**
+		* The code used to process request of clear site and page cache.
+		*/
+		add_action( 'init', 'bunnycdnhtmlcaching_process_clear_cache_request');
+		function bunnycdnhtmlcaching_process_clear_cache_request() {
+			
+			if ( empty( $_GET['_cache'] ) || empty( $_GET['_action'] ) || $_GET['_cache'] !== 'bunnycdnhtmlcaching' || ( $_GET['_action'] !== 'clear_site_cache' && $_GET['_action'] !== 'clear_page_cache' ) ) {
+				return;
+			}
+
+			if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'bunnycdnhtmlcaching_clear_cache_nonce' ) ) {
+				return;
+			}
+
+			$settings = get_option("bunnycdnhtmlcaching_settings");
+			if (is_serialized($settings)) {
+				$settings = unserialize($settings);
+			}
+
+			$account_key = isset($settings['bunnycdn_api_key']) ? $settings['bunnycdn_api_key'] : false;
+			$pullzone_id = isset($settings['bunnycdn_pullzone_id']) ?  $settings['bunnycdn_pullzone_id'] : false;
+			$cdn = new bunnycdn_api();
+
+			if ( $account_key && $pullzone_id && $_GET['_action'] === 'clear_page_cache' ) {
+				$url = parse_url( home_url(), PHP_URL_SCHEME ) . '://' . parse_url( home_url(), PHP_URL_HOST ) . preg_replace( '/\?.*/', '', $_SERVER['REQUEST_URI'] );
+				$cdn->Account( $account_key )->PurgeCache( $url );
+			} elseif ( $_GET['_action'] === 'clear_site_cache' ) {
+				$cdn->Account( $account_key )->PurgeCache( "", $pullzone_id);
+
+			}
+
+			wp_safe_redirect( wp_get_referer() );
+			exit();
+		}
 	}
 
 }
